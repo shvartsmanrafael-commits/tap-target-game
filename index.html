@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick Clicker Challenge</title>
+    <!-- Use Tailwind CSS for easy, responsive styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for the game target */
+        #target {
+            width: 80px;
+            height: 80px;
+            background-color: #ef4444; /* Red 500 */
+            border-radius: 50%;
+            position: absolute;
+            cursor: pointer;
+            transition: transform 0.1s ease-out, background-color 0.1s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        #target:hover {
+            background-color: #dc2626; /* Red 600 */
+            transform: scale(1.05);
+        }
+
+        /* Styling for the game area container */
+        #game-area {
+            position: relative;
+            width: 95vw; /* Fluid width */
+            max-width: 600px;
+            height: 60vh; /* Fluid height */
+            background-color: #f3f4f6;
+            border-radius: 1rem;
+            border: 2px solid #d1d5db;
+            margin: 20px auto;
+            overflow: hidden; /* Keep the target inside the bounds */
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex flex-col items-center p-4 min-h-screen font-sans">
+
+    <div class="w-full max-w-lg p-6 bg-white rounded-xl shadow-2xl space-y-4">
+        <h1 class="text-3xl font-extrabold text-center text-gray-800">Tap Target Game</h1>
+        
+        <!-- Score and Timer Display -->
+        <div class="flex justify-between p-3 bg-indigo-100 rounded-lg shadow-inner">
+            <p class="text-xl font-semibold text-indigo-800">Score: <span id="score" class="font-bold">0</span></p>
+            <p class="text-xl font-semibold text-indigo-800">Time Left: <span id="timer" class="font-bold">10</span>s</p>
+        </div>
+
+        <!-- Start Button -->
+        <button id="start-button" class="w-full py-3 bg-indigo-600 text-white font-bold text-lg rounded-lg hover:bg-indigo-700 transition duration-150 ease-in-out shadow-md">
+            Start Game!
+        </button>
+
+        <!-- Game Area -->
+        <div id="game-area">
+            <!-- The clickable target will be created here by JavaScript -->
+        </div>
+
+        <!-- Message/Results Box -->
+        <div id="message" class="text-center text-2xl font-bold text-green-700 hidden"></div>
+    </div>
+
+    <script>
+        // --- GAME JAVASCRIPT LOGIC ---
+        const gameArea = document.getElementById('game-area');
+        const scoreDisplay = document.getElementById('score');
+        const timerDisplay = document.getElementById('timer');
+        const startButton = document.getElementById('start-button');
+        const messageBox = document.getElementById('message');
+
+        const GAME_DURATION = 10; // seconds
+
+        let score = 0;
+        let timeLeft = GAME_DURATION;
+        let gameInterval;
+        let target;
+
+        // --- Utility Functions ---
+
+        /**
+         * Generates a random integer between min (inclusive) and max (inclusive).
+         * @param {number} min 
+         * @param {number} max 
+         * @returns {number}
+         */
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        /**
+         * Creates and initializes the clickable target element.
+         */
+        function createTarget() {
+            // Check if a target already exists and remove it
+            if (target) {
+                target.removeEventListener('click', handleTargetClick);
+                target.remove();
+            }
+
+            // Create the new target element
+            target = document.createElement('div');
+            target.id = 'target';
+            target.addEventListener('click', handleTargetClick);
+            gameArea.appendChild(target);
+
+            // Set its initial random position
+            moveTargetRandomly();
+        }
+        
+        /**
+         * Moves the target to a new random position within the game area bounds.
+         */
+        function moveTargetRandomly() {
+            // Get boundaries of the game area and target
+            const areaWidth = gameArea.clientWidth;
+            const areaHeight = gameArea.clientHeight;
+            const targetSize = target.offsetWidth;
+
+            // Calculate the maximum allowed positions
+            // We subtract targetSize so the target doesn't go outside the area
+            const maxX = areaWidth - targetSize;
+            const maxY = areaHeight - targetSize;
+
+            // Generate new random positions
+            const newX = getRandomInt(0, maxX);
+            const newY = getRandomInt(0, maxY);
+
+            // Apply the new position
+            target.style.left = `${newX}px`;
+            target.style.top = `${newY}px`;
+        }
+
+        /**
+         * Handles the click/tap event on the target.
+         */
+        function handleTargetClick() {
+            if (timeLeft > 0) {
+                score++;
+                scoreDisplay.textContent = score;
+                // Move the target immediately to a new spot
+                moveTargetRandomly();
+                
+                // Add a quick visual feedback (optional)
+                target.style.transform = 'scale(0.8)';
+                setTimeout(() => {
+                    target.style.transform = 'scale(1)';
+                }, 100);
+            }
+        }
+
+        /**
+         * Main game loop that handles the timer.
+         */
+        function gameLoop() {
+            timeLeft--;
+            timerDisplay.textContent = timeLeft;
+
+            if (timeLeft <= 0) {
+                clearInterval(gameInterval);
+                endGame();
+            }
+        }
+
+        /**
+         * Starts a new game session.
+         */
+        function startGame() {
+            score = 0;
+            timeLeft = GAME_DURATION;
+            scoreDisplay.textContent = score;
+            timerDisplay.textContent = timeLeft;
+            messageBox.textContent = '';
+            messageBox.classList.add('hidden');
+            startButton.textContent = 'Game In Progress...';
+            startButton.disabled = true;
+
+            createTarget(); // Initialize and place the target
+            
+            // Start the timer interval
+            gameInterval = setInterval(gameLoop, 1000);
+        }
+
+        /**
+         * Ends the current game session.
+         */
+        function endGame() {
+            // Remove the target
+            if (target) {
+                target.removeEventListener('click', handleTargetClick);
+                target.remove();
+                target = null;
+            }
+
+            messageBox.textContent = `Time's Up! Final Score: ${score}`;
+            messageBox.classList.remove('hidden');
+            startButton.textContent = 'Play Again';
+            startButton.disabled = false;
+        }
+
+        // --- Event Listeners ---
+        startButton.addEventListener('click', startGame);
+
+        // Initial state setup
+        window.onload = function() {
+            timerDisplay.textContent = GAME_DURATION; // Show initial time
+        };
+
+    </script>
+</body>
+</html>
