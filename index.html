@@ -7,40 +7,100 @@
     <!-- Use Tailwind CSS for easy, responsive styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Custom styles for the game target */
-        #target {
-            width: 80px;
-            height: 80px;
-            background-color: #ef4444; /* Red 500 */
-            border-radius: 50%;
-            position: absolute;
-            cursor: pointer;
-            transition: transform 0.1s ease-out, background-color 0.1s;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
+* {
+    box-sizing: border-box; 
+}
 
-        #target:hover {
-            background-color: #dc2626; /* Red 600 */
-            transform: scale(1.05);
-        }
+body {
+    font-family: 'Inter', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #1a1a2e;
+    color: #e9e4f0;
+    margin: 0;
+    min-height: 100vh;
+    overflow-x: hidden; 
+    padding-top: 20px;
+}
 
-        /* Styling for the game area container */
-        #game-area {
-            position: relative;
-            width: 95vw; /* Fluid width */
-            max-width: 600px;
-            height: 60vh; /* Fluid height */
-            background-color: #f3f4f6;
-            border-radius: 1rem;
-            border: 2px solid #d1d5db;
-            margin: 20px auto;
-            overflow: hidden; /* Keep the target inside the bounds */
-        }
-    </style>
+#main-container {
+    width: 70%; 
+    max-width: 800px;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    text-align: center;
+    margin-bottom: 20px;
+    min-height: 350px;
+    position: relative; 
+}
+
+#game-message {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+#target-area {
+    height: 250px; 
+    position: relative; /* CRITICAL: Stops the circle from escaping */
+    width: 100%; /* RECOMMENDED: Ensures circle can use the full width */
+    margin: 15px 0; /* Aesthetic spacing */
+    border: 2px dashed #ccc; /* For visualization—you can delete this line later! */
+}
+
+.target {
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    background-color: #ff3333;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.1s;
+    box-shadow: 0 0 10px rgba(255, 204, 0, 0.7);
+}
+
+.target:active {
+    transform: scale(0.9);
+}
+
+#score-timer-container {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    padding: 0 10px;
+    margin-bottom: 10px;
+}
+
+.info-box {
+    font-size: 1.1rem;
+    padding: 8px 12px;
+    border-radius: 6px;
+    background-color: #4b4b73;
+}
+
+@media (max-width: 600px) {
+    #main-container {
+        width: 95%;
+        padding: 10px;
+    }
+    .target {
+        width: 40px;
+        height: 40px;
+    }
+    #score-timer-container {
+        flex-direction: column;
+    }
+    .info-box {
+        margin-bottom: 5px;
+    }
+}
+</style>
 </head>
 <body class="bg-gray-100 flex flex-col items-center p-4 min-h-screen font-sans">
 
-    <div class="w-full max-w-lg p-6 bg-white rounded-xl shadow-2xl space-y-4">
+    <div id="main-container" class="w-full max-w-lg p-6 bg-white rounded-xl shadow-2xl space-y-4">
         <h1 class="text-3xl font-extrabold text-center text-gray-800">Tap Target Game</h1>
         
         <!-- Score and Timer Display -->
@@ -55,7 +115,7 @@
         </button>
 
         <!-- Game Area -->
-        <div id="game-area">
+        <div id="target-area">
             <!-- The clickable target will be created here by JavaScript -->
         </div>
 
@@ -65,7 +125,7 @@
 
     <script>
         // --- GAME JAVASCRIPT LOGIC ---
-        const gameArea = document.getElementById('game-area');
+        const gameArea = document.getElementById('target-area');
         const scoreDisplay = document.getElementById('score');
         const timerDisplay = document.getElementById('timer');
         const startButton = document.getElementById('start-button');
@@ -102,7 +162,8 @@
 
             // Create the new target element
             target = document.createElement('div');
-            target.id = 'target';
+            target = document.createElement('div');
+target.classList.add('target'); // <-- Use classList.add to apply the style
             target.addEventListener('click', handleTargetClick);
             gameArea.appendChild(target);
 
@@ -211,3 +272,12 @@
     </script>
 </body>
 </html>
+
+        
+
+        
+        
+               
+       
+
+ 
