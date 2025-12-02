@@ -7,6 +7,7 @@
     <!-- Use Tailwind CSS for easy, responsive styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+/* Base styles */
 * {
     box-sizing: border-box; 
 }
@@ -16,17 +17,18 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    background-color: #1a1a2e;
-    color: #e9e4f0;
+    background-color: #ffffff; /* White background */
+    color: #1f2937; /* Default dark text color */
     margin: 0;
     min-height: 100vh;
     overflow-x: hidden; 
-    padding-top: 20px;
+    padding: 20px; /* Add padding here */
 }
 
+/* Main game container styling */
 #main-container {
-    width: 70%; 
-    max-width: 800px;
+    width: 95%; 
+    max-width: 1200px; 
     padding: 20px;
     border-radius: 12px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
@@ -36,20 +38,15 @@ body {
     position: relative; 
 }
 
-#game-message {
-    font-size: 1.5rem;
-    font-weight: bold;
-    margin-bottom: 15px;
-}
-
 #target-area {
     height: 250px; 
-    position: relative; /* CRITICAL: Stops the circle from escaping */
-    width: 100%; /* RECOMMENDED: Ensures circle can use the full width */
-    margin: 15px 0; /* Aesthetic spacing */
-    border: 2px dashed #ccc; /* For visualization—you can delete this line later! */
+    position: relative; 
+    width: 100%; 
+    margin: 15px 0; 
+    border: 2px dashed #3f3f46; /* Dashed border for the game area */
 }
 
+/* Target circle styling */
 .target {
     position: absolute;
     width: 50px;
@@ -65,21 +62,6 @@ body {
     transform: scale(0.9);
 }
 
-#score-timer-container {
-    display: flex;
-    justify-content: space-between;
-    width: 100%;
-    padding: 0 10px;
-    margin-bottom: 10px;
-}
-
-.info-box {
-    font-size: 1.1rem;
-    padding: 8px 12px;
-    border-radius: 6px;
-    background-color: #4b4b73;
-}
-
 @media (max-width: 600px) {
     #main-container {
         width: 95%;
@@ -89,24 +71,60 @@ body {
         width: 40px;
         height: 40px;
     }
-    #score-timer-container {
-        flex-direction: column;
-    }
-    .info-box {
-        margin-bottom: 5px;
-    }
+}
+
+/* Custom Modal Styles for Login/Signup */
+.modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex; justify-content: center; align-items: center;
+    z-index: 50; backdrop-filter: blur(5px);
+}
+.auth-modal {
+    background-color: #2a2a44; border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.7); width: 90%; max-width: 400px; padding: 24px;
 }
 </style>
 </head>
-<body class="bg-gray-100 flex flex-col items-center p-4 min-h-screen font-sans">
+<body>
 
-    <div id="main-container" class="w-full max-w-lg p-6 bg-white rounded-xl shadow-2xl space-y-4">
-        <h1 class="text-3xl font-extrabold text-center text-gray-800">Tap Target Game</h1>
+    <!-- GAME CONTAINER -->
+    <div id="main-container" class="w-full max-w-lg p-6 bg-gray-800 rounded-xl shadow-2xl space-y-4">
         
+        <!-- Header (Login/Signup/Logout UI) -->
+        <div class="flex justify-between items-center pb-2 border-b border-gray-700">
+            <h1 class="text-3xl font-extrabold text-white">Quick Clicker</h1>
+            
+            <!-- Guest Status (Visible when not logged in) -->
+            <div id="guest-status" class="space-x-2">
+                <button id="login-btn" class="py-1 px-3 bg-gray-600 hover:bg-gray-700 text-white text-sm font-semibold rounded-lg shadow-md">Login</button>
+                <button id="signup-btn" class="py-1 px-3 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg shadow-md">Sign Up</button>
+            </div>
+
+            <!-- User Status (Hidden until login) -->
+            <div id="user-status" class="flex items-center space-x-2 hidden">
+                <p id="welcome-message" class="text-sm font-medium text-green-400 truncate max-w-[150px]">Welcome</p>
+                <button id="logout-button" class="py-1 px-3 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-lg shadow-md">Logout</button>
+            </div>
+        </div>
+        
+        <!-- Mode Selector (UPDATED) -->
+        <div class="flex items-center justify-between">
+            <label for="mode-selector" class="text-lg font-semibold text-gray-300">Mode:</label>
+            <select id="mode-selector" class="p-2 bg-gray-700 text-white rounded-lg">
+                <option value="10">10 Seconds</option>
+                <option value="20">20 Seconds</option>
+                <option value="30">30 Seconds</option>
+                <option value="40">40 Seconds</option>
+                <option value="50">50 Seconds</option>
+                <option value="60">60 Seconds</option>
+            </select>
+        </div>
+
         <!-- Score and Timer Display -->
-        <div class="flex justify-between p-3 bg-indigo-100 rounded-lg shadow-inner">
-            <p class="text-xl font-semibold text-indigo-800">Score: <span id="score" class="font-bold">0</span></p>
-            <p class="text-xl font-semibold text-indigo-800">Time Left: <span id="timer" class="font-bold">10</span>s</p>
+        <div class="flex justify-between p-3 bg-indigo-900 rounded-lg shadow-inner">
+            <p class="text-xl font-semibold text-indigo-200">Score: <span id="score" class="font-bold">0</span></p>
+            <p class="text-xl font-semibold text-indigo-200">Time: <span id="timer" class="font-bold">10</span>s</p>
         </div>
 
         <!-- Start Button -->
@@ -116,168 +134,293 @@ body {
 
         <!-- Game Area -->
         <div id="target-area">
-            <!-- The clickable target will be created here by JavaScript -->
+            Click Start to Begin!
         </div>
 
         <!-- Message/Results Box -->
-        <div id="message" class="text-center text-2xl font-bold text-green-700 hidden"></div>
+        <div id="message" class="text-center text-xl font-bold text-green-400 hidden"></div>
     </div>
 
-    <script>
-        // --- GAME JAVASCRIPT LOGIC ---
+    <!-- AUTH MODAL -->
+    <div id="auth-modal-overlay" class="modal-overlay hidden">
+        <div id="auth-container" class="auth-modal flex flex-col space-y-6">
+            <h2 id="auth-title" class="text-2xl font-bold text-white text-center">Log In</h2>
+            <div id="auth-feedback" class="text-sm text-center py-2 text-red-400 hidden"></div>
+
+            <button id="google-login-btn" class="flex items-center justify-center w-full py-2 px-4 bg-white text-gray-900 font-semibold rounded-lg shadow hover:bg-gray-100">
+                Sign in with Google
+            </button>
+
+            <div class="flex items-center"><hr class="flex-grow border-gray-600"><span class="px-3 text-sm text-gray-400">OR</span><hr class="flex-grow border-gray-600"></div>
+            
+            <form id="login-form" class="space-y-4">
+                <input type="email" name="email" placeholder="Email" required class="w-full p-3 bg-gray-700 border border-gray-600 text-white rounded-lg" />
+                <input type="password" name="password" placeholder="Password" required class="w-full p-3 bg-gray-700 border border-gray-600 text-white rounded-lg" />
+                <button type="submit" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg">Log In</button>
+            </form>
+
+            <form id="signup-form" class="space-y-4 hidden">
+                <input type="email" name="email" placeholder="Email" required class="w-full p-3 bg-gray-700 border border-gray-600 text-white rounded-lg" />
+                <input type="password" name="password" placeholder="Password (min 6)" required class="w-full p-3 bg-gray-700 border border-gray-600 text-white rounded-lg" minlength="6" />
+                <button type="submit" class="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg">Sign Up</button>
+            </form>
+
+            <p id="auth-toggle-link" class="text-center text-sm text-gray-400 cursor-pointer hover:text-indigo-400">Don't have an account? Sign Up</p>
+            <button onclick="document.getElementById('auth-modal-overlay').classList.add('hidden')" class="text-center text-xs text-gray-500 hover:text-gray-300 w-full">Close</button>
+        </div>
+    </div>
+    
+    <!-- FULL JAVASCRIPT LOGIC (Firebase + Game Logic) -->
+    <script type="module">
+        // --- FIREBASE IMPORTS ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // --- CONFIG & INITIALIZATION ---
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        let app, auth, db, userId;
+
+        try {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+            
+            // Set up initial authentication (anonymous or custom token)
+            const initAuth = async () => {
+                if (typeof __initial_auth_token !== 'undefined') await signInWithCustomToken(auth, __initial_auth_token);
+                else await signInAnonymously(auth);
+            };
+            initAuth();
+
+            // --- AUTH STATE CHANGE LISTENER ---
+            onAuthStateChanged(auth, (user) => {
+                const userStatus = document.getElementById('user-status');
+                const guestStatus = document.getElementById('guest-status');
+                const welcome = document.getElementById('welcome-message');
+                if (user && !user.isAnonymous) {
+                    userId = user.uid;
+                    // Display user email (or 'Hi User' if not available)
+                    welcome.textContent = user.email ? `Hi ${user.email.split('@')[0]}` : 'Hi User';
+                    userStatus.classList.remove('hidden');
+                    guestStatus.classList.add('hidden');
+                } else {
+                    // This handles initial anonymous sign-in or logout
+                    userId = user ? user.uid : null;
+                    userStatus.classList.add('hidden');
+                    guestStatus.classList.remove('hidden');
+                }
+            });
+        } catch (e) { console.error("Firebase Initialization Error:", e); }
+
+
+        // --- GAME ELEMENTS ---
         const gameArea = document.getElementById('target-area');
         const scoreDisplay = document.getElementById('score');
         const timerDisplay = document.getElementById('timer');
         const startButton = document.getElementById('start-button');
         const messageBox = document.getElementById('message');
-
-        const GAME_DURATION = 10; // seconds
-
+        const modeSel = document.getElementById('mode-selector'); 
+        
         let score = 0;
-        let timeLeft = GAME_DURATION;
+        let timeLeft = 0; 
         let gameInterval;
         let target;
 
-        // --- Utility Functions ---
+        // --- AUTH UI ELEMENTS ---
+        const modal = document.getElementById('auth-modal-overlay');
+        const loginForm = document.getElementById('login-form');
+        const signupForm = document.getElementById('signup-form');
+        const toggleLink = document.getElementById('auth-toggle-link');
+        const authTitle = document.getElementById('auth-title');
+        const feedback = document.getElementById('auth-feedback');
 
-        /**
-         * Generates a random integer between min (inclusive) and max (inclusive).
-         * @param {number} min 
-         * @param {number} max 
-         * @returns {number}
-         */
-        function getRandomInt(min, max) {
-            return Math.floor(Math.random() * (max - min + 1)) + min;
-        }
+        // --- Utility Functions (GAME) ---
+        function getRandomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
 
-        /**
-         * Creates and initializes the clickable target element.
-         */
         function createTarget() {
-            // Check if a target already exists and remove it
             if (target) {
                 target.removeEventListener('click', handleTargetClick);
+                target.removeEventListener('mousedown', handleTargetClick);
                 target.remove();
             }
-
-            // Create the new target element
+            gameArea.innerHTML = 'Click the Red Target!'; 
             target = document.createElement('div');
-            target = document.createElement('div');
-target.classList.add('target'); // <-- Use classList.add to apply the style
-            target.addEventListener('click', handleTargetClick);
+            target.classList.add('target'); 
+            target.addEventListener('click', handleTargetClick); 
+            target.addEventListener('mousedown', handleTargetClick); 
             gameArea.appendChild(target);
-
-            // Set its initial random position
             moveTargetRandomly();
         }
         
-        /**
-         * Moves the target to a new random position within the game area bounds.
-         */
         function moveTargetRandomly() {
-            // Get boundaries of the game area and target
+            if (!target) return;
             const areaWidth = gameArea.clientWidth;
             const areaHeight = gameArea.clientHeight;
-            const targetSize = target.offsetWidth;
-
-            // Calculate the maximum allowed positions
-            // We subtract targetSize so the target doesn't go outside the area
+            const targetSize = target.offsetWidth || 50; 
             const maxX = areaWidth - targetSize;
             const maxY = areaHeight - targetSize;
-
-            // Generate new random positions
+            if (maxX < 0 || maxY < 0) return;
             const newX = getRandomInt(0, maxX);
             const newY = getRandomInt(0, maxY);
-
-            // Apply the new position
             target.style.left = `${newX}px`;
             target.style.top = `${newY}px`;
         }
 
-        /**
-         * Handles the click/tap event on the target.
-         */
         function handleTargetClick() {
             if (timeLeft > 0) {
                 score++;
                 scoreDisplay.textContent = score;
-                // Move the target immediately to a new spot
                 moveTargetRandomly();
-                
-                // Add a quick visual feedback (optional)
-                target.style.transform = 'scale(0.8)';
-                setTimeout(() => {
-                    target.style.transform = 'scale(1)';
-                }, 100);
             }
         }
 
-        /**
-         * Main game loop that handles the timer.
-         */
         function gameLoop() {
             timeLeft--;
             timerDisplay.textContent = timeLeft;
-
             if (timeLeft <= 0) {
                 clearInterval(gameInterval);
                 endGame();
             }
         }
 
-        /**
-         * Starts a new game session.
-         */
+        // --- IMPORTANT: This function uses the modeSel value to set the timer ---
         function startGame() {
+            if (gameInterval) return;
+
             score = 0;
-            timeLeft = GAME_DURATION;
+            // Use the selected mode duration
+            timeLeft = parseInt(modeSel.value); // Reads the value from the updated selector
             scoreDisplay.textContent = score;
             timerDisplay.textContent = timeLeft;
             messageBox.textContent = '';
             messageBox.classList.add('hidden');
             startButton.textContent = 'Game In Progress...';
             startButton.disabled = true;
+            modeSel.disabled = true;
 
-            createTarget(); // Initialize and place the target
-            
-            // Start the timer interval
+            createTarget();
             gameInterval = setInterval(gameLoop, 1000);
         }
 
-        /**
-         * Ends the current game session.
-         */
+        // --- END GAME ---
         function endGame() {
-            // Remove the target
             if (target) {
                 target.removeEventListener('click', handleTargetClick);
+                target.removeEventListener('mousedown', handleTargetClick);
                 target.remove();
                 target = null;
             }
+            clearInterval(gameInterval);
+            gameInterval = null; 
+            gameArea.innerHTML = 'Game Over!';
 
-            messageBox.textContent = `Time's Up! Final Score: ${score}`;
-            messageBox.classList.remove('hidden');
             startButton.textContent = 'Play Again';
             startButton.disabled = false;
+            modeSel.disabled = false;
+            
+            messageBox.innerHTML = `Time's Up! Final Score: ${score}`;
+            
+            // Prompt about stats only if they are anonymous
+            if (!auth.currentUser || auth.currentUser.isAnonymous) {
+                 messageBox.innerHTML += `<br> <span class="text-sm text-yellow-400">Log in to save your personal high scores!</span>`;
+            }
+            messageBox.classList.remove('hidden');
         }
 
-        // --- Event Listeners ---
+
+        // --- AUTH UI AND FIREBASE HOOKS ---
+
+        // Function to toggle between Login and Sign Up views
+        window.toggleAuth = (isLogin) => {
+            feedback.classList.add('hidden'); 
+            if(isLogin) {
+                loginForm.classList.remove('hidden'); signupForm.classList.add('hidden');
+                authTitle.textContent = 'Log In'; toggleLink.textContent = "Need account? Sign Up";
+                toggleLink.onclick = () => window.toggleAuth(false);
+            } else {
+                loginForm.classList.add('hidden'); signupForm.classList.remove('hidden');
+                authTitle.textContent = 'Sign Up'; toggleLink.textContent = "Have account? Log In";
+                toggleLink.onclick = () => window.toggleAuth(true);
+            }
+        };
+
+        // --- Event Listeners (AUTH) ---
+        document.getElementById('login-btn').onclick = () => { 
+            modal.classList.remove('hidden'); 
+            window.toggleAuth(true); 
+        };
+        document.getElementById('signup-btn').onclick = () => { 
+            modal.classList.remove('hidden'); 
+            window.toggleAuth(false); 
+        };
+        document.getElementById('logout-button').onclick = async () => { 
+            try {
+                await signOut(auth); 
+                // Sign back in anonymously so the user can keep using the app
+                await signInAnonymously(auth); 
+            } catch (e) {
+                console.error("Logout failed:", e);
+            }
+        };
+
+        // Email/Password Login
+        loginForm.onsubmit = async (e) => {
+            e.preventDefault();
+            feedback.classList.add('hidden');
+            try { 
+                await signInWithEmailAndPassword(auth, loginForm.email.value, loginForm.password.value); 
+                modal.classList.add('hidden'); 
+            }
+            catch(err) { 
+                feedback.textContent = `Login Failed: ${err.message}`;
+                feedback.classList.remove('hidden');
+            }
+        };
+
+        // Email/Password Sign Up
+        signupForm.onsubmit = async (e) => {
+            e.preventDefault();
+            feedback.classList.add('hidden');
+            try { 
+                await createUserWithEmailAndPassword(auth, signupForm.email.value, signupForm.password.value); 
+                modal.classList.add('hidden'); 
+            }
+            catch(err) { 
+                feedback.textContent = `Sign Up Failed: ${err.message}`;
+                feedback.classList.remove('hidden');
+            }
+        };
+
+        // Google Sign-in
+        document.getElementById('google-login-btn').onclick = async () => {
+            feedback.classList.add('hidden');
+            try { 
+                await signInWithPopup(auth, new GoogleAuthProvider()); 
+                modal.classList.add('hidden'); 
+            }
+            catch(err) { 
+                feedback.textContent = `Google Sign-in Failed: ${err.message}`;
+                feedback.classList.remove('hidden');
+            }
+        };
+        
+        // --- Event Listeners (GAME) ---
         startButton.addEventListener('click', startGame);
+        modeSel.onchange = () => { if(!gameInterval) timerDisplay.textContent = modeSel.value; }; 
 
         // Initial state setup
         window.onload = function() {
-            timerDisplay.textContent = GAME_DURATION; // Show initial time
+            const initialDuration = document.getElementById('mode-selector')?.value || 10;
+            timerDisplay.textContent = initialDuration;
+            // Set initial toggle state for the auth modal
+            document.getElementById('auth-toggle-link').onclick = () => window.toggleAuth(false);
         };
-
+        
     </script>
 </body>
 </html>
-
-        
-
-        
-        
-               
        
 
  
