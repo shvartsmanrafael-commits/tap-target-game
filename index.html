@@ -122,10 +122,25 @@ body {
         </div>
 
         <!-- Score and Timer Display -->
-        <div class="flex justify-between p-3 bg-indigo-900 rounded-lg shadow-inner">
-            <p class="text-xl font-semibold text-indigo-200">Score: <span id="score" class="font-bold">0</span></p>
-            <p class="text-xl font-semibold text-indigo-200">Time: <span id="timer" class="font-bold">10</span>s</p>
-        </div>
+ <div class="p-3 bg-indigo-900 rounded-lg shadow-inner space-y-1">
+
+    <div class="flex justify-between">
+        <p class="text-xl font-semibold text-indigo-200">
+            Score: <span id="score" class="font-bold">0</span>
+        </p>
+
+        <p class="text-xl font-semibold text-indigo-200">
+            Time: <span id="timer" class="font-bold">10</span>s
+        </p>
+    </div>
+
+    <!-- High Score Display -->
+    <p class="text-md font-semibold text-yellow-300 text-center">
+        High Score (<span id="hs-mode">10</span>s):
+        <span id="high-score">0</span>
+    </p>
+
+</div>
 
         <!-- Start Button -->
         <button id="start-button" class="w-full py-3 bg-indigo-600 text-white font-bold text-lg rounded-lg hover:bg-indigo-700 transition duration-150 ease-in-out shadow-md">
@@ -227,6 +242,27 @@ body {
         let timeLeft = 0; 
         let gameInterval;
         let target;
+        // ---------- HIGH SCORE FUNCTIONS ----------
+function loadHighScore(mode) {
+    return parseInt(localStorage.getItem(`highscore_${mode}`)) || 0;
+}
+
+function saveHighScore(mode, score) {
+    const prev = loadHighScore(mode);
+    if (score > prev) {
+        localStorage.setItem(`highscore_${mode}`, score);
+        return true; // New record
+    }
+    return false;
+}
+
+function updateHighScoreDisplay() {
+    const mode = modeSel.value;
+    document.getElementById("hs-mode").textContent = mode;
+    document.getElementById("high-score").textContent = loadHighScore(mode);
+}
+// -----------------------------------------
+
 
         // --- AUTH UI ELEMENTS ---
         const modal = document.getElementById('auth-modal-overlay');
@@ -320,13 +356,22 @@ body {
             startButton.disabled = false;
             modeSel.disabled = false;
             
-            messageBox.innerHTML = `Time's Up! Final Score: ${score}`;
-            
-            // Prompt about stats only if they are anonymous
-            if (!auth.currentUser || auth.currentUser.isAnonymous) {
-                 messageBox.innerHTML += `<br> <span class="text-sm text-yellow-400">Log in to save your personal high scores!</span>`;
-            }
-            messageBox.classList.remove('hidden');
+            const mode = modeSel.value;
+const isNewRecord = saveHighScore(mode, score);
+updateHighScoreDisplay();
+
+messageBox.innerHTML = `Time's Up! Final Score: ${score}`;
+
+if (isNewRecord) {
+    messageBox.innerHTML += `<br><span class="text-yellow-300">🎉 New High Score for ${mode}s!</span>`;
+}
+
+// Prompt about stats only if they are anonymous
+if (!auth.currentUser || auth.currentUser.isAnonymous) {
+     messageBox.innerHTML += `<br> <span class="text-sm text-yellow-400">Log in to save your personal high scores!</span>`;
+}
+messageBox.classList.remove('hidden');
+
         }
 
 
@@ -408,19 +453,23 @@ body {
         
         // --- Event Listeners (GAME) ---
         startButton.addEventListener('click', startGame);
-        modeSel.onchange = () => { if(!gameInterval) timerDisplay.textContent = modeSel.value; }; 
+        // Update high score when user changes mode
+modeSel.onchange = () => {
+    if (!gameInterval) timerDisplay.textContent = modeSel.value;
+    updateHighScoreDisplay();
+};
 
-        // Initial state setup
-        window.onload = function() {
-            const initialDuration = document.getElementById('mode-selector')?.value || 10;
-            timerDisplay.textContent = initialDuration;
-            // Set initial toggle state for the auth modal
-            document.getElementById('auth-toggle-link').onclick = () => window.toggleAuth(false);
-        };
+// Initial state setup
+window.onload = function () {
+    const initialDuration = modeSel.value || 10;
+    timerDisplay.textContent = initialDuration;
+    updateHighScoreDisplay();
+    // Set initial toggle state for the auth modal
+    document.getElementById('auth-toggle-link').onclick = () => window.toggleAuth(false);
+};
+
         
     </script>
 </body>
 </html>
-       
-
  
