@@ -194,7 +194,16 @@ body {
         
         // --- CONFIG & INITIALIZATION ---
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const firebaseConfig = {
+  apiKey: "AIzaSyC8aW7lV5FyNS30LMSQEoSFVy0wUelv7T4",
+  authDomain: "tap-target-clicker.firebaseapp.com",
+  projectId: "tap-target-clicker",
+  storageBucket: "tap-target-clicker.firebasestorage.app",
+  messagingSenderId: "883564803170",
+  appId: "1:883564803170:web:8a1434f0fc819b14110d3b",
+  measurementId: "G-PX75BW5TL4"
+};
+
         let app, auth, db, userId;
 
         try {
@@ -265,12 +274,59 @@ function updateHighScoreDisplay() {
 
 
         // --- AUTH UI ELEMENTS ---
-        const modal = document.getElementById('auth-modal-overlay');
-        const loginForm = document.getElementById('login-form');
-        const signupForm = document.getElementById('signup-form');
-        const toggleLink = document.getElementById('auth-toggle-link');
-        const authTitle = document.getElementById('auth-title');
-        const feedback = document.getElementById('auth-feedback');
+// --- AUTH UI ELEMENTS ---
+const modal = document.getElementById('auth-modal-overlay');
+const loginForm = document.getElementById('login-form');
+const signupForm = document.getElementById('signup-form');
+const toggleLink = document.getElementById('auth-toggle-link');
+const authTitle = document.getElementById('auth-title');
+const feedback = document.getElementById('auth-feedback');
+
+// --- Function to toggle between Login and Sign Up ---
+window.toggleAuth = (isLogin) => {
+    feedback.classList.add('hidden');
+
+    if (isLogin) {
+        loginForm.classList.remove('hidden');
+        signupForm.classList.add('hidden');
+        authTitle.textContent = 'Log In';
+        toggleLink.textContent = "Need an account? Sign Up";
+        toggleLink.onclick = () => window.toggleAuth(false);
+    } else {
+        loginForm.classList.add('hidden');
+        signupForm.classList.remove('hidden');
+        authTitle.textContent = 'Sign Up';
+        toggleLink.textContent = "Already have an account? Log In";
+        toggleLink.onclick = () => window.toggleAuth(true);
+    }
+};
+
+// --- Assign button events AFTER toggleAuth exists ---
+document.getElementById('login-btn').onclick = () => {
+    modal.classList.remove('hidden');
+    window.toggleAuth(true);
+};
+
+document.getElementById('signup-btn').onclick = () => {
+    modal.classList.remove('hidden');
+    window.toggleAuth(false);
+};
+
+// Close modal button
+document.querySelector('#auth-container button').onclick = () => {
+    modal.classList.add('hidden');
+};
+// Logout button
+document.getElementById('logout-button').onclick = async () => {
+    try {
+        await signOut(auth);
+    } catch (err) {
+        console.error("Logout failed:", err);
+    }
+};
+
+
+
 
         // --- Utility Functions (GAME) ---
         function getRandomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
@@ -376,39 +432,13 @@ messageBox.classList.remove('hidden');
 
 
         // --- AUTH UI AND FIREBASE HOOKS ---
+        // Function to toggle between Login and Sign Up views
+
 
         // Function to toggle between Login and Sign Up views
-        window.toggleAuth = (isLogin) => {
-            feedback.classList.add('hidden'); 
-            if(isLogin) {
-                loginForm.classList.remove('hidden'); signupForm.classList.add('hidden');
-                authTitle.textContent = 'Log In'; toggleLink.textContent = "Need account? Sign Up";
-                toggleLink.onclick = () => window.toggleAuth(false);
-            } else {
-                loginForm.classList.add('hidden'); signupForm.classList.remove('hidden');
-                authTitle.textContent = 'Sign Up'; toggleLink.textContent = "Have account? Log In";
-                toggleLink.onclick = () => window.toggleAuth(true);
-            }
-        };
 
-        // --- Event Listeners (AUTH) ---
-        document.getElementById('login-btn').onclick = () => { 
-            modal.classList.remove('hidden'); 
-            window.toggleAuth(true); 
-        };
-        document.getElementById('signup-btn').onclick = () => { 
-            modal.classList.remove('hidden'); 
-            window.toggleAuth(false); 
-        };
-        document.getElementById('logout-button').onclick = async () => { 
-            try {
-                await signOut(auth); 
-                // Sign back in anonymously so the user can keep using the app
-                await signInAnonymously(auth); 
-            } catch (e) {
-                console.error("Logout failed:", e);
-            }
-        };
+        // --- Event Listeners (AUTH) --
+
 
         // Email/Password Login
         loginForm.onsubmit = async (e) => {
@@ -472,4 +502,3 @@ window.onload = function () {
     </script>
 </body>
 </html>
- 
