@@ -187,372 +187,227 @@ body {
     
     <!-- FULL JAVASCRIPT LOGIC (Firebase + Game Logic) -->
     <script type="module">
-        // --- FIREBASE IMPORTS ---
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import {
-  getFirestore,
-  doc,
-  setDoc,
-  serverTimestamp
-} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+  // --- FIREBASE IMPORTS ---
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+  import { getAuth, signInAnonymously, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+  import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- CONFIG & INITIALIZATION ---
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = {
-  apiKey: "AIzaSyC8aW7lV5FyNS30LMSQEoSFVy0wUelv7T4",
-  authDomain: "tap-target-clicker.firebaseapp.com",
-  projectId: "tap-target-clicker",
-  storageBucket: "tap-target-clicker.firebasestorage.app",
-  messagingSenderId: "883564803170",
-  appId: "1:883564803170:web:8a1434f0fc819b14110d3b",
-  measurementId: "G-PX75BW5TL4"
-};
+  // --- CONFIG & INITIALIZATION ---
+  const firebaseConfig = {
+    apiKey: "AIzaSyC8aW7lV5FyNS30LMSQEoSFVy0wUelv7T4",
+    authDomain: "tap-target-clicker.firebaseapp.com",
+    projectId: "tap-target-clicker",
+    storageBucket: "tap-target-clicker.firebasestorage.app",
+    messagingSenderId: "883564803170",
+    appId: "1:883564803170:web:8a1434f0fc819b14110d3b",
+    measurementId: "G-PX75BW5TL4"
+  };
 
-        let app, auth, db, userId;
-        // --- SAVE SCORE TO FIRESTORE ---
-async function saveScoreToFirestore(score) {
-    if (!userId) return; // only save if user is logged in
-    try {
-        await setDoc(doc(db, "leaderboard", userId), {
-            score: score,
-            timestamp: serverTimestamp()
-        });
-        console.log("Score saved!");
-    } catch (err) {
-        console.error("Error saving score:", err);
-    }
-}
+  let app = initializeApp(firebaseConfig);
+  let auth = getAuth(app);
+  let db = getFirestore(app);
+  let userId;
 
-        // --- FIRESTORE: SAVE SCORE ---
-async function saveScoreToFirestore(score, mode) {
+  // --- SAVE SCORE TO FIRESTORE ---
+  async function saveScoreToFirestore(score, mode) {
     if (!auth.currentUser || auth.currentUser.isAnonymous) return;
-
     const user = auth.currentUser;
+    try {
+      await setDoc(doc(db, "leaderboard", `${mode}_${user.uid}`), {
+        uid: user.uid,
+        email: user.email || "anonymous",
+        score: score,
+        mode: parseInt(mode),
+        createdAt: serverTimestamp()
+      });
+      console.log("Score saved to Firestore!");
+    } catch (err) {
+      console.error("Error saving score:", err);
+    }
+  }
 
-    await setDoc(
-        doc(db, "leaderboard", `${mode}_${user.uid}`),
-        {
-            uid: user.uid,
-            email: user.email || "anonymous",
-            score: score,
-            mode: parseInt(mode),
-            createdAt: serverTimestamp()
-        }
-    );
-}
+  // --- AUTH STATE LISTENER ---
+  onAuthStateChanged(auth, (user) => {
+    const userStatus = document.getElementById('user-status');
+    const guestStatus = document.getElementById('guest-status');
+    const welcome = document.getElementById('welcome-message');
+    if (user && !user.isAnonymous) {
+      userId = user.uid;
+      welcome.textContent = user.email ? `Hi ${user.email.split('@')[0]}` : 'Hi User';
+      userStatus.classList.remove('hidden');
+      guestStatus.classList.add('hidden');
+    } else {
+      userId = user ? user.uid : null;
+      userStatus.classList.add('hidden');
+      guestStatus.classList.remove('hidden');
+    }
+  });
 
+  // --- GAME ELEMENTS ---
+  const gameArea = document.getElementById('target-area');
+  const scoreDisplay = document.getElementById('score');
+  const timerDisplay = document.getElementById('timer');
+  const startButton = document.getElementById('start-button');
+  const messageBox = document.getElementById('message');
+  const modeSel = document.getElementById('mode-selector');
 
-        try {
-            app = initializeApp(firebaseConfig);
-            auth = getAuth(app);
-            db = getFirestore(app);
-            
-            // Set up initial authentication (anonymous or custom token)
-            const initAuth = async () => {
-                if (typeof __initial_auth_token !== 'undefined') await signInWithCustomToken(auth, __initial_auth_token);
-                else await signInAnonymously(auth);
-            };
-            initAuth();
+  let score = 0, timeLeft = 0, gameInterval, target;
 
-            // --- AUTH STATE CHANGE LISTENER ---
-            onAuthStateChanged(auth, (user) => {
-                const userStatus = document.getElementById('user-status');
-                const guestStatus = document.getElementById('guest-status');
-                const welcome = document.getElementById('welcome-message');
-                if (user && !user.isAnonymous) {
-                    userId = user.uid;
-                    // Display user email (or 'Hi User' if not available)
-                    welcome.textContent = user.email ? `Hi ${user.email.split('@')[0]}` : 'Hi User';
-                    userStatus.classList.remove('hidden');
-                    guestStatus.classList.add('hidden');
-                } else {
-                    // This handles initial anonymous sign-in or logout
-                    userId = user ? user.uid : null;
-                    userStatus.classList.add('hidden');
-                    guestStatus.classList.remove('hidden');
-                }
-            });
-        } catch (e) { console.error("Firebase Initialization Error:", e); }
-
-
-        // --- GAME ELEMENTS ---
-        const gameArea = document.getElementById('target-area');
-        const scoreDisplay = document.getElementById('score');
-        const timerDisplay = document.getElementById('timer');
-        const startButton = document.getElementById('start-button');
-        const messageBox = document.getElementById('message');
-        const modeSel = document.getElementById('mode-selector'); 
-        
-        let score = 0;
-        let timeLeft = 0; 
-        let gameInterval;
-        let target;
-        // ---------- HIGH SCORE FUNCTIONS ----------
-function loadHighScore(mode) {
+  // --- HIGH SCORE ---
+  function loadHighScore(mode) {
     return parseInt(localStorage.getItem(`highscore_${mode}`)) || 0;
-}
-
-function saveHighScore(mode, score) {
+  }
+  function saveHighScore(mode, score) {
     const prev = loadHighScore(mode);
     if (score > prev) {
-        localStorage.setItem(`highscore_${mode}`, score);
-        return true; // New record
+      localStorage.setItem(`highscore_${mode}`, score);
+      return true;
     }
     return false;
-}
-
-function updateHighScoreDisplay() {
+  }
+  function updateHighScoreDisplay() {
     const mode = modeSel.value;
     document.getElementById("hs-mode").textContent = mode;
     document.getElementById("high-score").textContent = loadHighScore(mode);
-}
-// -----------------------------------------
+  }
 
+  // --- AUTH MODAL ---
+  const modal = document.getElementById('auth-modal-overlay');
+  const loginForm = document.getElementById('login-form');
+  const signupForm = document.getElementById('signup-form');
+  const toggleLink = document.getElementById('auth-toggle-link');
+  const authTitle = document.getElementById('auth-title');
+  const feedback = document.getElementById('auth-feedback');
 
-        // --- AUTH UI ELEMENTS ---
-// --- AUTH UI ELEMENTS ---
-const modal = document.getElementById('auth-modal-overlay');
-const loginForm = document.getElementById('login-form');
-const signupForm = document.getElementById('signup-form');
-const toggleLink = document.getElementById('auth-toggle-link');
-const authTitle = document.getElementById('auth-title');
-const feedback = document.getElementById('auth-feedback');
-
-// --- Function to toggle between Login and Sign Up ---
-window.toggleAuth = (isLogin) => {
+  window.toggleAuth = (isLogin) => {
     feedback.classList.add('hidden');
-
     if (isLogin) {
-        loginForm.classList.remove('hidden');
-        signupForm.classList.add('hidden');
-        authTitle.textContent = 'Log In';
-        toggleLink.textContent = "Need an account? Sign Up";
-        toggleLink.onclick = () => window.toggleAuth(false);
+      loginForm.classList.remove('hidden');
+      signupForm.classList.add('hidden');
+      authTitle.textContent = 'Log In';
+      toggleLink.textContent = "Need an account? Sign Up";
+      toggleLink.onclick = () => window.toggleAuth(false);
     } else {
-        loginForm.classList.add('hidden');
-        signupForm.classList.remove('hidden');
-        authTitle.textContent = 'Sign Up';
-        toggleLink.textContent = "Already have an account? Log In";
-        toggleLink.onclick = () => window.toggleAuth(true);
+      loginForm.classList.add('hidden');
+      signupForm.classList.remove('hidden');
+      authTitle.textContent = 'Sign Up';
+      toggleLink.textContent = "Already have an account? Log In";
+      toggleLink.onclick = () => window.toggleAuth(true);
     }
-};
+  };
 
-// --- Assign button events AFTER toggleAuth exists ---
-document.getElementById('login-btn').onclick = () => {
-    modal.classList.remove('hidden');
-    window.toggleAuth(true);
-};
+  document.getElementById('login-btn').onclick = () => { modal.classList.remove('hidden'); window.toggleAuth(true); };
+  document.getElementById('signup-btn').onclick = () => { modal.classList.remove('hidden'); window.toggleAuth(false); };
+  document.getElementById('logout-button').onclick = async () => { try { await signOut(auth); } catch (err) { console.error(err); } };
 
-document.getElementById('signup-btn').onclick = () => {
-    modal.classList.remove('hidden');
-    window.toggleAuth(false);
-};
+  // --- GAME UTILITY ---
+  function getRandomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
 
-// Logout button
-document.getElementById('logout-button').onclick = async () => {
-    try {
-        await signOut(auth);
-    } catch (err) {
-        console.error("Logout failed:", err);
+  function createTarget() {
+    if (target) { target.remove(); }
+    target = document.createElement('div');
+    target.classList.add('target');
+    target.addEventListener('click', handleTargetClick);
+    gameArea.innerHTML = 'Click the Red Target!';
+    gameArea.appendChild(target);
+    moveTargetRandomly();
+  }
+
+  function moveTargetRandomly() {
+    if (!target) return;
+    const areaWidth = gameArea.clientWidth;
+    const areaHeight = gameArea.clientHeight;
+    const targetSize = target.offsetWidth || 50;
+    const maxX = areaWidth - targetSize;
+    const maxY = areaHeight - targetSize;
+    const newX = getRandomInt(0, maxX);
+    const newY = getRandomInt(0, maxY);
+    target.style.left = `${newX}px`;
+    target.style.top = `${newY}px`;
+  }
+
+  function handleTargetClick() {
+    if (timeLeft > 0) {
+      score++;
+      scoreDisplay.textContent = score;
+      moveTargetRandomly();
     }
-};
+  }
 
+  function gameLoop() {
+    timeLeft--;
+    timerDisplay.textContent = timeLeft;
+    if (timeLeft <= 0) {
+      clearInterval(gameInterval);
+      endGame();
+    }
+  }
 
+  function startGame() {
+    if (gameInterval) return;
+    score = 0;
+    timeLeft = parseInt(modeSel.value);
+    scoreDisplay.textContent = score;
+    timerDisplay.textContent = timeLeft;
+    messageBox.classList.add('hidden');
+    startButton.textContent = 'Game In Progress...';
+    startButton.disabled = true;
+    modeSel.disabled = true;
+    createTarget();
+    gameInterval = setInterval(gameLoop, 1000);
+  }
 
+  function endGame() {
+    if (target) { target.remove(); target = null; }
+    clearInterval(gameInterval);
+    gameInterval = null;
+    gameArea.innerHTML = 'Game Over!';
+    startButton.textContent = 'Play Again';
+    startButton.disabled = false;
+    modeSel.disabled = false;
 
-        // --- Utility Functions (GAME) ---
-        function getRandomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
-
-        function createTarget() {
-            if (target) {
-                target.removeEventListener('click', handleTargetClick);
-                target.removeEventListener('mousedown', handleTargetClick);
-                target.remove();
-            }
-            gameArea.innerHTML = 'Click the Red Target!'; 
-            target = document.createElement('div');
-            target.classList.add('target'); 
-            target.addEventListener('click', handleTargetClick); 
-            target.addEventListener('mousedown', handleTargetClick); 
-            gameArea.appendChild(target);
-            moveTargetRandomly();
-        }
-        
-        function moveTargetRandomly() {
-            if (!target) return;
-            const areaWidth = gameArea.clientWidth;
-            const areaHeight = gameArea.clientHeight;
-            const targetSize = target.offsetWidth || 50; 
-            const maxX = areaWidth - targetSize;
-            const maxY = areaHeight - targetSize;
-            if (maxX < 0 || maxY < 0) return;
-            const newX = getRandomInt(0, maxX);
-            const newY = getRandomInt(0, maxY);
-            target.style.left = `${newX}px`;
-            target.style.top = `${newY}px`;
-        }
-
-        function handleTargetClick() {
-            if (timeLeft > 0) {
-                score++;
-                scoreDisplay.textContent = score;
-                moveTargetRandomly();
-            }
-        }
-
-        function gameLoop() {
-            timeLeft--;
-            timerDisplay.textContent = timeLeft;
-            if (timeLeft <= 0) {
-                clearInterval(gameInterval);
-                endGame();
-            }
-        }
-
-        // --- IMPORTANT: This function uses the modeSel value to set the timer ---
-        function startGame() {
-            if (gameInterval) return;
-
-            score = 0;
-            // Use the selected mode duration
-            timeLeft = parseInt(modeSel.value); // Reads the value from the updated selector
-            scoreDisplay.textContent = score;
-            timerDisplay.textContent = timeLeft;
-            messageBox.textContent = '';
-            messageBox.classList.add('hidden');
-            startButton.textContent = 'Game In Progress...';
-            startButton.disabled = true;
-            modeSel.disabled = true;
-
-            createTarget();
-            gameInterval = setInterval(gameLoop, 1000);
-        }
-
-        // --- END GAME ---
-        function endGame() {
-            if (target) {
-                target.removeEventListener('click', handleTargetClick);
-                target.removeEventListener('mousedown', handleTargetClick);
-                target.remove();
-                target = null;
-            }
-            clearInterval(gameInterval);
-            gameInterval = null; 
-            gameArea.innerHTML = 'Game Over!';
-
-            startButton.textContent = 'Play Again';
-            startButton.disabled = false;
-            modeSel.disabled = false;
-            
-            const mode = modeSel.value;
-const isNewRecord = saveHighScore(mode, score);
-saveScoreToFirestore(score); // <-- saves score to Firestore for logged-in users
-
-updateHighScoreDisplay();
-
-messageBox.innerHTML = `Time's Up! Final Score: ${score}`;
-
-if (isNewRecord) {
-    messageBox.innerHTML += `<br><span class="text-yellow-300">🎉 New High Score for ${mode}s!</span>`;
-}
-
-// Prompt about stats only if they are anonymous
-if (!auth.currentUser || auth.currentUser.isAnonymous) {
-     messageBox.innerHTML += `<br> <span class="text-sm text-yellow-400">Log in to save your personal high scores!</span>`;
-}
-messageBox.classList.remove('hidden');
-// ---- SAVE SCORE TO GLOBAL LEADERBOARD ----
-if (auth.currentUser && !auth.currentUser.isAnonymous) {
     const mode = modeSel.value;
-    // Save score to Firestore if logged in
-if (auth.currentUser && !auth.currentUser.isAnonymous) {
+    const isNewRecord = saveHighScore(mode, score);
     saveScoreToFirestore(score, mode);
-}
-
-
-    const scoreRef = doc(
-        db,
-        "leaderboards",
-        mode,
-        "scores",
-        auth.currentUser.uid
-    );
-
-    setDoc(scoreRef, {
-        uid: auth.currentUser.uid,
-        email: auth.currentUser.email,
-        score: score,
-        mode: mode,
-        updatedAt: serverTimestamp()
-    }).catch(err => {
-        console.error("Failed to save score:", err);
-    });
-}
-
-
-        }
-
-
-        // Email/Password Login
-        loginForm.onsubmit = async (e) => {
-            e.preventDefault();
-            feedback.classList.add('hidden');
-            try { 
-                await signInWithEmailAndPassword(auth, loginForm.email.value, loginForm.password.value); 
-                modal.classList.add('hidden'); 
-            }
-            catch(err) { 
-                feedback.textContent = `Login Failed: ${err.message}`;
-                feedback.classList.remove('hidden');
-            }
-        };
-
-        // Email/Password Sign Up
-        signupForm.onsubmit = async (e) => {
-            e.preventDefault();
-            feedback.classList.add('hidden');
-            try { 
-                await createUserWithEmailAndPassword(auth, signupForm.email.value, signupForm.password.value); 
-                modal.classList.add('hidden'); 
-            }
-            catch(err) { 
-                feedback.textContent = `Sign Up Failed: ${err.message}`;
-                feedback.classList.remove('hidden');
-            }
-        };
-
-        // Google Sign-in
-        document.getElementById('google-login-btn').onclick = async () => {
-            feedback.classList.add('hidden');
-            try { 
-                await signInWithPopup(auth, new GoogleAuthProvider()); 
-                modal.classList.add('hidden'); 
-            }
-            catch(err) { 
-                feedback.textContent = `Google Sign-in Failed: ${err.message}`;
-                feedback.classList.remove('hidden');
-            }
-        };
-        
-        // --- Event Listeners (GAME) ---
-        startButton.addEventListener('click', startGame);
-        // Update high score when user changes mode
-modeSel.onchange = () => {
-    if (!gameInterval) timerDisplay.textContent = modeSel.value;
     updateHighScoreDisplay();
-};
 
-// Initial state setup
-window.onload = function () {
-    const initialDuration = modeSel.value || 10;
-    timerDisplay.textContent = initialDuration;
+    messageBox.innerHTML = `Time's Up! Final Score: ${score}`;
+    if (isNewRecord) messageBox.innerHTML += `<br><span class="text-yellow-300">🎉 New High Score for ${mode}s!</span>`;
+    if (!auth.currentUser || auth.currentUser.isAnonymous) messageBox.innerHTML += `<br><span class="text-sm text-yellow-400">Log in to save your personal high scores!</span>`;
+    messageBox.classList.remove('hidden');
+  }
+
+  // --- AUTH FORMS ---
+  loginForm.onsubmit = async (e) => {
+    e.preventDefault();
+    feedback.classList.add('hidden');
+    try { await signInWithEmailAndPassword(auth, loginForm.email.value, loginForm.password.value); modal.classList.add('hidden'); }
+    catch(err) { feedback.textContent = `Login Failed: ${err.message}`; feedback.classList.remove('hidden'); }
+  };
+
+  signupForm.onsubmit = async (e) => {
+    e.preventDefault();
+    feedback.classList.add('hidden');
+    try { await createUserWithEmailAndPassword(auth, signupForm.email.value, signupForm.password.value); modal.classList.add('hidden'); }
+    catch(err) { feedback.textContent = `Sign Up Failed: ${err.message}`; feedback.classList.remove('hidden'); }
+  };
+
+  document.getElementById('google-login-btn').onclick = async () => {
+    feedback.classList.add('hidden');
+    try { await signInWithPopup(auth, new GoogleAuthProvider()); modal.classList.add('hidden'); }
+    catch(err) { feedback.textContent = `Google Sign-in Failed: ${err.message}`; feedback.classList.remove('hidden'); }
+  };
+
+  startButton.addEventListener('click', startGame);
+  modeSel.onchange = () => { if (!gameInterval) timerDisplay.textContent = modeSel.value; updateHighScoreDisplay(); };
+
+  // --- INITIAL STATE ---
+  window.onload = () => {
+    timerDisplay.textContent = modeSel.value;
     updateHighScoreDisplay();
-    // Set initial toggle state for the auth modal
     document.getElementById('auth-toggle-link').onclick = () => window.toggleAuth(false);
-};
-
-        
-    </script>
+    modal.classList.add('hidden');
+  };
+</script>
 </body>
 </html>
