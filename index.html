@@ -190,8 +190,13 @@ body {
         // --- FIREBASE IMPORTS ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        
+        import {
+  getFirestore,
+  doc,
+  setDoc,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
         // --- CONFIG & INITIALIZATION ---
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const firebaseConfig = {
@@ -312,10 +317,6 @@ document.getElementById('signup-btn').onclick = () => {
     window.toggleAuth(false);
 };
 
-// Close modal button
-document.querySelector('#auth-container button').onclick = () => {
-    modal.classList.add('hidden');
-};
 // Logout button
 document.getElementById('logout-button').onclick = async () => {
     try {
@@ -427,17 +428,31 @@ if (!auth.currentUser || auth.currentUser.isAnonymous) {
      messageBox.innerHTML += `<br> <span class="text-sm text-yellow-400">Log in to save your personal high scores!</span>`;
 }
 messageBox.classList.remove('hidden');
+// ---- SAVE SCORE TO GLOBAL LEADERBOARD ----
+if (auth.currentUser && !auth.currentUser.isAnonymous) {
+    const mode = modeSel.value;
+
+    const scoreRef = doc(
+        db,
+        "leaderboards",
+        mode,
+        "scores",
+        auth.currentUser.uid
+    );
+
+    setDoc(scoreRef, {
+        uid: auth.currentUser.uid,
+        email: auth.currentUser.email,
+        score: score,
+        mode: mode,
+        updatedAt: serverTimestamp()
+    }).catch(err => {
+        console.error("Failed to save score:", err);
+    });
+}
+
 
         }
-
-
-        // --- AUTH UI AND FIREBASE HOOKS ---
-        // Function to toggle between Login and Sign Up views
-
-
-        // Function to toggle between Login and Sign Up views
-
-        // --- Event Listeners (AUTH) --
 
 
         // Email/Password Login
