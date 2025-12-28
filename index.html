@@ -210,6 +210,24 @@ body {
 };
 
         let app, auth, db, userId;
+        // --- FIRESTORE: SAVE SCORE ---
+async function saveScoreToFirestore(score, mode) {
+    if (!auth.currentUser || auth.currentUser.isAnonymous) return;
+
+    const user = auth.currentUser;
+
+    await setDoc(
+        doc(db, "leaderboard", `${mode}_${user.uid}`),
+        {
+            uid: user.uid,
+            email: user.email || "anonymous",
+            score: score,
+            mode: parseInt(mode),
+            createdAt: serverTimestamp()
+        }
+    );
+}
+
 
         try {
             app = initializeApp(firebaseConfig);
@@ -431,6 +449,11 @@ messageBox.classList.remove('hidden');
 // ---- SAVE SCORE TO GLOBAL LEADERBOARD ----
 if (auth.currentUser && !auth.currentUser.isAnonymous) {
     const mode = modeSel.value;
+    // Save score to Firestore if logged in
+if (auth.currentUser && !auth.currentUser.isAnonymous) {
+    saveScoreToFirestore(score, mode);
+}
+
 
     const scoreRef = doc(
         db,
