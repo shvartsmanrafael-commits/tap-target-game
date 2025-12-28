@@ -210,6 +210,20 @@ body {
 };
 
         let app, auth, db, userId;
+        // --- SAVE SCORE TO FIRESTORE ---
+async function saveScoreToFirestore(score) {
+    if (!userId) return; // only save if user is logged in
+    try {
+        await setDoc(doc(db, "leaderboard", userId), {
+            score: score,
+            timestamp: serverTimestamp()
+        });
+        console.log("Score saved!");
+    } catch (err) {
+        console.error("Error saving score:", err);
+    }
+}
+
         // --- FIRESTORE: SAVE SCORE ---
 async function saveScoreToFirestore(score, mode) {
     if (!auth.currentUser || auth.currentUser.isAnonymous) return;
@@ -433,6 +447,8 @@ document.getElementById('logout-button').onclick = async () => {
             
             const mode = modeSel.value;
 const isNewRecord = saveHighScore(mode, score);
+saveScoreToFirestore(score); // <-- saves score to Firestore for logged-in users
+
 updateHighScoreDisplay();
 
 messageBox.innerHTML = `Time's Up! Final Score: ${score}`;
