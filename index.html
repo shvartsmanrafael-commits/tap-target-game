@@ -107,7 +107,16 @@ body {
                 <button id="logout-button" class="py-1 px-3 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-lg shadow-md">Logout</button>
             </div>
         </div>
-        
+        <!-- TABS -->
+<div class="flex justify-center gap-4 mb-4">
+    <button id="tab-game" class="px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold">
+        Game
+    </button>
+    <button id="tab-leaderboard" class="px-4 py-2 bg-gray-600 text-white rounded-lg font-semibold">
+        Leaderboard
+    </button>
+</div>
+
         <!-- Mode Selector (UPDATED) -->
         <div class="flex items-center justify-between">
             <label for="mode-selector" class="text-lg font-semibold text-gray-300">Mode:</label>
@@ -146,6 +155,29 @@ body {
         <button id="start-button" class="w-full py-3 bg-indigo-600 text-white font-bold text-lg rounded-lg hover:bg-indigo-700 transition duration-150 ease-in-out shadow-md">
             Start Game!
         </button>
+<!-- LEADERBOARD VIEW -->
+<div id="leaderboard-view" class="hidden bg-gray-900 p-4 rounded-lg space-y-3">
+    <h2 class="text-xl font-bold text-white text-center">🏆 Global Leaderboard</h2>
+
+    <select id="leaderboard-mode" class="w-full p-2 bg-gray-700 text-white rounded-lg">
+        <option value="10">Top 10 (10s)</option>
+        <option value="20">Top 10 (20s)</option>
+        <option value="30">Top 10 (30s)</option>
+        <option value="40">Top 10 (40s)</option>
+        <option value="50">Top 10 (50s)</option>
+        <option value="60">Top 10 (60s)</option>
+    </select>
+
+    <div id="leaderboard-login-warning" class="hidden text-center text-yellow-400 font-semibold">
+        You need an account to view the leaderboard.
+        <br>
+        <button id="leaderboard-login-btn" class="mt-2 px-4 py-2 bg-indigo-600 rounded-lg">
+            Log In / Sign Up
+        </button>
+    </div>
+
+    <ul id="leaderboard-list" class="space-y-2 text-white"></ul>
+</div>
 
         <!-- Game Area -->
         <div id="target-area">
@@ -190,7 +222,18 @@ body {
   // --- FIREBASE IMPORTS ---
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
   import { getAuth, signInAnonymously, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-  import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import {
+  getFirestore,
+  doc,
+  setDoc,
+  serverTimestamp,
+  collection,
+  query,
+  where,
+  orderBy,
+  limit,
+  getDocs
+} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
   // --- CONFIG & INITIALIZATION ---
   const firebaseConfig = {
@@ -242,6 +285,41 @@ body {
       guestStatus.classList.remove('hidden');
     }
   });
+// --- LEADERBOARD ---
+const leaderboardView = document.getElementById("leaderboard-view");
+const leaderboardList = document.getElementById("leaderboard-list");
+const leaderboardMode = document.getElementById("leaderboard-mode");
+const leaderboardWarning = document.getElementById("leaderboard-login-warning");
+
+async function loadLeaderboard(mode) {
+    leaderboardList.innerHTML = "";
+
+    if (!auth.currentUser || auth.currentUser.isAnonymous) {
+        leaderboardWarning.classList.remove("hidden");
+        return;
+    }
+
+    leaderboardWarning.classList.add("hidden");
+
+    const q = query(
+        collection(db, "leaderboard"),
+        where("mode", "==", parseInt(mode)),
+        orderBy("score", "desc"),
+        limit(10)
+    );
+
+    const snapshot = await getDocs(q);
+    let rank = 1;
+
+    snapshot.forEach(doc => {
+        const data = doc.data();
+        const li = document.createElement("li");
+        li.className = "bg-gray-800 p-2 rounded-lg";
+        li.textContent = `#${rank} — ${data.email.split("@")[0]}: ${data.score}`;
+        leaderboardList.appendChild(li);
+        rank++;
+    });
+}
 
   // --- GAME ELEMENTS ---
   const gameArea = document.getElementById('target-area');
@@ -399,6 +477,31 @@ body {
   };
 
   startButton.addEventListener('click', startGame);
+  const tabGame = document.getElementById("tab-game");
+const tabLeaderboard = document.getElementById("tab-leaderboard");
+
+tabGame.onclick = () => {
+    leaderboardView.classList.add("hidden");
+    document.getElementById("target-area").classList.remove("hidden");
+    tabGame.classList.replace("bg-gray-600", "bg-indigo-600");
+    tabLeaderboard.classList.replace("bg-indigo-600", "bg-gray-600");
+};
+
+tabLeaderboard.onclick = () => {
+    leaderboardView.classList.remove("hidden");
+    document.getElementById("target-area").classList.add("hidden");
+    tabLeaderboard.classList.replace("bg-gray-600", "bg-indigo-600");
+    tabGame.classList.replace("bg-indigo-600", "bg-gray-600");
+    loadLeaderboard(leaderboardMode.value);
+};
+
+leaderboardMode.onchange = () => loadLeaderboard(leaderboardMode.value);
+
+document.getElementById("leaderboard-login-btn").onclick = () => {
+    modal.classList.remove("hidden");
+    window.toggleAuth(true);
+};
+
   modeSel.onchange = () => { if (!gameInterval) timerDisplay.textContent = modeSel.value; updateHighScoreDisplay(); };
 
   // --- INITIAL STATE ---
