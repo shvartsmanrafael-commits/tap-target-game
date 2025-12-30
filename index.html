@@ -257,7 +257,7 @@ import {
   let auth = getAuth(app);
   let db = getFirestore(app);
   let userId;
-  
+
   signInAnonymously(auth).catch(console.error);
 
 
@@ -499,15 +499,52 @@ tabGame.onclick = () => {
 };
 
 
+tabGame.onclick = () => {
+    // Show game, hide leaderboard
+    leaderboardView.classList.add("hidden");
+    document.getElementById("game-view").classList.remove("hidden");
+
+    // RESET GAME UI
+    gameArea.innerHTML = "Click Start to Begin!";
+    messageBox.classList.add("hidden");
+    startButton.textContent = "Start Game!";
+    startButton.disabled = false;
+    modeSel.disabled = false;
+
+    // Button styles
+    tabGame.classList.replace("bg-gray-600", "bg-indigo-600");
+    tabLeaderboard.classList.replace("bg-indigo-600", "bg-gray-600");
+};
+
 tabLeaderboard.onclick = () => {
+    // Hide game, show leaderboard
     leaderboardView.classList.remove("hidden");
     document.getElementById("game-view").classList.add("hidden");
 
+    // STOP + RESET GAME COMPLETELY
+    if (gameInterval) {
+        clearInterval(gameInterval);
+        gameInterval = null;
+    }
+    if (target) {
+        target.remove();
+        target = null;
+    }
+
+    gameArea.innerHTML = "";
+    messageBox.classList.add("hidden");
+    startButton.textContent = "Start Game!";
+    startButton.disabled = false;
+    modeSel.disabled = false;
+
+    // Button styles
     tabLeaderboard.classList.replace("bg-gray-600", "bg-indigo-600");
     tabGame.classList.replace("bg-indigo-600", "bg-gray-600");
 
+    // Load leaderboard data
     loadLeaderboard(leaderboardMode.value);
 };
+
 
 
 leaderboardMode.onchange = () => loadLeaderboard(leaderboardMode.value);
