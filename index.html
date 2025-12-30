@@ -117,6 +117,9 @@ body {
     </button>
 </div>
 
+<!-- GAME VIEW -->
+<div id="game-view">
+
         <!-- Mode Selector (UPDATED) -->
         <div class="flex items-center justify-between">
             <label for="mode-selector" class="text-lg font-semibold text-gray-300">Mode:</label>
@@ -155,7 +158,8 @@ body {
         <button id="start-button" class="w-full py-3 bg-indigo-600 text-white font-bold text-lg rounded-lg hover:bg-indigo-700 transition duration-150 ease-in-out shadow-md">
             Start Game!
         </button>
-<!-- LEADERBOARD VIEW -->
+    </div> <!-- END GAME VIEW -->
+    <!-- LEADERBOARD VIEW -->
 <div id="leaderboard-view" class="hidden bg-gray-900 p-4 rounded-lg space-y-3">
     <h2 class="text-xl font-bold text-white text-center">🏆 Global Leaderboard</h2>
 
@@ -179,6 +183,7 @@ body {
     <ul id="leaderboard-list" class="space-y-2 text-white"></ul>
 </div>
 
+
         <!-- Game Area -->
         <div id="target-area">
             Click Start to Begin!
@@ -186,6 +191,8 @@ body {
 
         <!-- Message/Results Box -->
         <div id="message" class="text-center text-xl font-bold text-green-400 hidden"></div>
+        </div> <!-- END GAME VIEW -->
+
     </div>
 
     <!-- AUTH MODAL -->
@@ -250,6 +257,9 @@ import {
   let auth = getAuth(app);
   let db = getFirestore(app);
   let userId;
+  
+  signInAnonymously(auth).catch(console.error);
+
 
   // --- SAVE SCORE TO FIRESTORE ---
   async function saveScoreToFirestore(score, mode) {
@@ -482,18 +492,23 @@ const tabLeaderboard = document.getElementById("tab-leaderboard");
 
 tabGame.onclick = () => {
     leaderboardView.classList.add("hidden");
-    document.getElementById("target-area").classList.remove("hidden");
+    document.getElementById("game-view").classList.remove("hidden");
+
     tabGame.classList.replace("bg-gray-600", "bg-indigo-600");
     tabLeaderboard.classList.replace("bg-indigo-600", "bg-gray-600");
 };
 
+
 tabLeaderboard.onclick = () => {
     leaderboardView.classList.remove("hidden");
-    document.getElementById("target-area").classList.add("hidden");
+    document.getElementById("game-view").classList.add("hidden");
+
     tabLeaderboard.classList.replace("bg-gray-600", "bg-indigo-600");
     tabGame.classList.replace("bg-indigo-600", "bg-gray-600");
+
     loadLeaderboard(leaderboardMode.value);
 };
+
 
 leaderboardMode.onchange = () => loadLeaderboard(leaderboardMode.value);
 
