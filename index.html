@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -34,7 +34,7 @@ body {
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
     text-align: center;
     margin-bottom: 20px;
-    min-height: 350px;
+    min-height: 600px;
     position: relative; 
 }
 
@@ -458,6 +458,11 @@ async function loadLeaderboard(mode) {
     const mode = modeSel.value;
     const isNewRecord = saveHighScore(mode, score);
     saveScoreToFirestore(score, mode);
+    // If leaderboard is open, refresh it
+if (!leaderboardView.classList.contains("hidden")) {
+    loadLeaderboard(mode);
+}
+
     updateHighScoreDisplay();
 
     messageBox.innerHTML = `Time's Up! Final Score: ${score}`;
@@ -567,3 +572,4 @@ document.getElementById("leaderboard-login-btn").onclick = () => {
 </script>
 </body>
 </html>
+   
