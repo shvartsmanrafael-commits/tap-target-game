@@ -295,13 +295,19 @@ import {
     const userStatus = document.getElementById('user-status');
     const guestStatus = document.getElementById('guest-status');
     const welcome = document.getElementById('welcome-message');
+    const editBtn = document.getElementById('edit-username-btn');
     if (user && !user.isAnonymous) {
       userId = user.uid;
       welcome.textContent = user.email ? `Hi ${user.email.split('@')[0]}` : 'Hi User';
+
+      const editBtn = document.getElementById('edit-username-btn');
+
+
       userStatus.classList.remove('hidden');
       guestStatus.classList.add('hidden');
     } else {
       userId = user ? user.uid : null;
+      const editBtn = document.getElementById('edit-username-btn');
       userStatus.classList.add('hidden');
       guestStatus.classList.remove('hidden');
     }
