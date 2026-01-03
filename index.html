@@ -93,7 +93,7 @@ body {
         
         <!-- Header (Login/Signup/Logout UI) -->
         <div class="flex justify-between items-center pb-2 border-b border-gray-700">
-            <h1 class="text-3xl font-extrabold text-white">Quick Clicker</h1>
+            <h1 class="text-3xl font-extrabold text-white">Tap Target Game</h1>
             
             <!-- Guest Status (Visible when not logged in) -->
             <div id="guest-status" class="space-x-2">
@@ -101,22 +101,30 @@ body {
                 <button id="signup-btn" class="py-1 px-3 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg shadow-md">Sign Up</button>
             </div>
 
-            <!-- User Status (Hidden until login) -->
-            <div id="user-status" class="flex items-center space-x-2 hidden">
-                <div class="flex items-center gap-2">
-    <span id="welcome-message"
-          class="text-sm font-medium text-green-400 truncate max-w-[150px]">
-    </span>
+           <!-- User Status (Hidden until login) -->
+<div id="user-status" class="flex items-center space-x-2 hidden">
 
-    <button id="edit-username-btn"
-            class="hidden text-gray-400 hover:text-white"
-            title="Edit Username">
-        ✏️
+    <div class="flex items-center gap-1">
+        <span id="welcome-message"
+              class="text-sm font-medium text-green-400 truncate max-w-[150px]">
+            Hi User
+        </span>
+
+        <!-- ✏️ Edit Username Button -->
+        <button id="edit-username-btn"
+                title="Edit Username"
+                class="hidden text-gray-400 hover:text-white transition">
+            ✏️
+        </button>
+    </div>
+
+    <button id="logout-button"
+            class="py-1 px-3 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-lg shadow-md">
+        Logout
     </button>
-  </div>
-                <button id="logout-button" class="py-1 px-3 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-lg shadow-md">Logout</button>
-            </div>
-        </div>
+
+</div>
+
         <!-- TABS -->
 <div class="flex justify-center gap-4 mb-4">
     <button id="tab-game" class="px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold">
@@ -291,27 +299,57 @@ import {
   }
 
   // --- AUTH STATE LISTENER ---
-  onAuthStateChanged(auth, (user) => {
-    const userStatus = document.getElementById('user-status');
-    const guestStatus = document.getElementById('guest-status');
-    const welcome = document.getElementById('welcome-message');
-    const editBtn = document.getElementById('edit-username-btn');
+onAuthStateChanged(auth, (user) => {
+    const editBtn = document.getElementById('edit-username-btn'); // ⚡ Moved here
+const welcome = document.getElementById('welcome-message');
+const userStatus = document.getElementById('user-status');
+const guestStatus = document.getElementById('guest-status');
+
     if (user && !user.isAnonymous) {
-      userId = user.uid;
-      welcome.textContent = user.email ? `Hi ${user.email.split('@')[0]}` : 'Hi User';
+        userId = user.uid;
+        welcome.textContent = user.email ? `Hi ${user.email.split('@')[0]}` : 'Hi User';
 
-      const editBtn = document.getElementById('edit-username-btn');
+        // Show edit button for logged-in users
+        editBtn.classList.remove('hidden');
 
-
-      userStatus.classList.remove('hidden');
-      guestStatus.classList.add('hidden');
+        userStatus.classList.remove('hidden');
+        guestStatus.classList.add('hidden');
     } else {
-      userId = user ? user.uid : null;
-      const editBtn = document.getElementById('edit-username-btn');
-      userStatus.classList.add('hidden');
-      guestStatus.classList.remove('hidden');
+        userId = user ? user.uid : null;
+
+        // Hide edit button for guests
+        editBtn.classList.add('hidden');
+
+        userStatus.classList.add('hidden');
+        guestStatus.classList.remove('hidden');
     }
-  });
+}); // <-- THIS closes onAuthStateChanged
+
+// --- EDIT USERNAME FEATURE ---
+editBtn.addEventListener('click', async () => {
+    const newUsername = prompt("Please enter your new username:");
+    if (!newUsername) return; // User pressed Cancel
+
+    // Check if username already exists
+    const usersRef = collection(db, "users");
+    const q = query(usersRef, where("username", "==", newUsername));
+    const snapshot = await getDocs(q);
+
+    if (!snapshot.empty) {
+        alert("Username already taken!");
+        return;
+    }
+
+    // Save the new username to Firestore
+    const userDocRef = doc(db, "users", userId);
+    await setDoc(userDocRef, { username: newUsername }, { merge: true });
+
+    // Update the welcome message
+    welcome.textContent = `Hi ${newUsername}`;
+});
+
+
+
 // --- LEADERBOARD ---
 const leaderboardView = document.getElementById("leaderboard-view");
 const leaderboardList = document.getElementById("leaderboard-list");
@@ -512,13 +550,6 @@ if (!leaderboardView.classList.contains("hidden")) {
   const tabGame = document.getElementById("tab-game");
 const tabLeaderboard = document.getElementById("tab-leaderboard");
 
-tabGame.onclick = () => {
-    leaderboardView.classList.add("hidden");
-    document.getElementById("game-view").classList.remove("hidden");
-
-    tabGame.classList.replace("bg-gray-600", "bg-indigo-600");
-    tabLeaderboard.classList.replace("bg-indigo-600", "bg-gray-600");
-};
 
 
 tabGame.onclick = () => {
