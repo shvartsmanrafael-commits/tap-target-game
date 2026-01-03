@@ -14,8 +14,8 @@
 
 body {
     font-family: 'Inter', sans-serif;
-    background-color: #ffffff;
-    color: #1f2937;
+    background-color: #0f172a;
+    color: #e5e7eb;
     margin: 0;
     min-height: 100vh;
     padding: 20px;
@@ -214,8 +214,7 @@ body {
 
 
        
-        </div> <!-- END GAME VIEW -->
-
+        
     </div>
 
     <!-- AUTH MODAL -->
@@ -281,7 +280,12 @@ import {
   let db = getFirestore(app);
   let userId;
 
-  signInAnonymously(auth).catch(console.error);
+  onAuthStateChanged(auth, (user) => {
+  if (!user) {
+    signInAnonymously(auth).catch(console.error);
+  }
+});
+
 
 
   // --- SAVE SCORE TO FIRESTORE ---
@@ -341,28 +345,6 @@ const guestStatus = document.getElementById('guest-status');
     }
 }); // <-- THIS closes onAuthStateChanged
 
-// --- EDIT USERNAME FEATURE ---
-editBtn.addEventListener('click', async () => {
-    const newUsername = prompt("Please enter your new username:");
-    if (!newUsername) return; // User pressed Cancel
-
-    // Check if username already exists
-    const usersRef = collection(db, "users");
-    const q = query(usersRef, where("username", "==", newUsername));
-    const snapshot = await getDocs(q);
-
-    if (!snapshot.empty) {
-        alert("Username already taken!");
-        return;
-    }
-
-    // Save the new username to Firestore
-    const userDocRef = doc(db, "users", userId);
-    await setDoc(userDocRef, { username: newUsername }, { merge: true });
-
-    // Update the welcome message
-    welcome.textContent = `Hi ${newUsername}`;
-});
 
 
 
