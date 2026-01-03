@@ -7,6 +7,10 @@
     <!-- Use Tailwind CSS for easy, responsive styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+    html, body {
+    overflow-x: hidden;
+}
+
 /* Base styles */
 * {
     box-sizing: border-box; 
@@ -18,7 +22,7 @@ body {
     color: #e5e7eb;
     margin: 0;
     min-height: 100vh;
-    padding: 20px;
+    padding: 10px;
     display: block; /* Remove flex so things stack vertically */
 }
 
@@ -88,15 +92,25 @@ body {
     background-color: #2a2a44; border-radius: 12px;
     box-shadow: 0 10px 25px rgba(0,0,0,0.7); width: 90%; max-width: 400px; padding: 24px;
 }
+/* Stack tabs vertically on small screens */
+@media (max-width: 500px) {
+    .tabs-container {
+        flex-direction: column !important;
+        gap: 10px !important;
+    }
+}
+
 </style>
 </head>
 <body>
 
     <!-- GAME CONTAINER -->
-    <div id="main-container" class="w-full max-w-lg p-6 bg-gray-800 rounded-xl shadow-2xl space-y-4">
+    <div id="main-container" class="w-full p-6 bg-gray-800 rounded-xl shadow-2xl space-y-4 mx-auto">
+
         
         <!-- Header (Login/Signup/Logout UI) -->
-        <div class="flex justify-between items-center pb-2 border-b border-gray-700">
+        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 pb-2 border-b border-gray-700">
+
             <h1 class="text-3xl font-extrabold text-white">Tap Target Game</h1>
             
             <!-- Guest Status (Visible when not logged in) -->
@@ -617,3 +631,5 @@ document.getElementById("leaderboard-login-btn").onclick = () => {
 </script>
 </body>
 </html>
+   
+
