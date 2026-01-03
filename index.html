@@ -14,37 +14,41 @@
 
 body {
     font-family: 'Inter', sans-serif;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    background-color: #ffffff; /* White background */
-    color: #1f2937; /* Default dark text color */
+    background-color: #ffffff;
+    color: #1f2937;
     margin: 0;
     min-height: 100vh;
-    overflow-x: hidden; 
-    padding: 20px; /* Add padding here */
+    padding: 20px;
+    display: block; /* Remove flex so things stack vertically */
 }
+
 
 /* Main game container styling */
 #main-container {
-    width: 95%; 
-    max-width: 1200px; 
+    width: 100%; 
+    max-width: 800px; /* slightly smaller, centered */
     padding: 20px;
     border-radius: 12px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
     text-align: center;
-    margin-bottom: 20px;
+    margin: 0 auto 20px auto; /* center horizontally */
     min-height: 600px;
     position: relative; 
 }
 
 #target-area {
-    height: 250px; 
-    position: relative; 
-    width: 100%; 
-    margin: 15px 0; 
-    border: 2px dashed #3f3f46; /* Dashed border for the game area */
+    height: 400px; /* taller so target has room to move */
+    position: relative;
+    width: 100%;
+    margin: 15px 0;
+    border: 2px dashed #3f3f46;
+    display: flex; 
+    justify-content: center; 
+    align-items: center;
+    font-size: 1.2rem;
+    color: #fff;
 }
+
 
 /* Target circle styling */
 .target {
@@ -314,6 +318,18 @@ const guestStatus = document.getElementById('guest-status');
 
         userStatus.classList.remove('hidden');
         guestStatus.classList.add('hidden');
+
+        editBtn.onclick = async () => {
+            const newUsername = prompt("Please enter your new username:");
+            if (!newUsername) return;
+            const usersRef = collection(db, "users");
+            const q = query(usersRef, where("username", "==", newUsername));
+            const snapshot = await getDocs(q);
+            if (!snapshot.empty) { alert("Username already taken!"); return; }
+            await setDoc(doc(db, "users", userId), { username: newUsername }, { merge: true });
+            welcome.textContent = `Hi ${newUsername}`;
+        };
+
     } else {
         userId = user ? user.uid : null;
 
